@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Invoice & Receipt Generator</title>
+<style>
+  :root{
+    --ink:#171717;
+    --muted:#6b6b6b;
+    --line:#e3e1da;
+    --paper:#ffffff;
+    --page:#f4f3ef;
+    --accent:#1f3a5f;
+    --accent-hover:#16293f;
+    --danger:#a3372e;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    background:var(--page);
+    color:var(--ink);
+  }
+  .app{
+    display:grid;
+    grid-template-columns:420px 1fr;
+    min-height:100vh;
+  }
+  .panel{
+    background:var(--paper);
+    border-right:1px solid var(--line);
+    padding:28px 26px 60px;
+    overflow-y:auto;
+    max-height:100vh;
+  }
+  .panel h1{
+    font-size:20px;
+    font-weight:700;
+    margin:0 0 4px;
+    letter-spacing:-0.01em;
+  }
+  .panel .sub{
+    font-size:13px;
+    color:var(--muted);
+    margin:0 0 20px;
+  }
+  .type-toggle{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+    margin-bottom:24px;
+  }
+  .type-toggle button{
+    padding:10px;
+    font-size:13px;
+    font-weight:700;
+    border-radius:8px;
+    border:1px solid var(--line);
+    background:#fff;
+    color:var(--muted);
+    cursor:pointer;
+  }
+  .type-toggle button.active{
+    background:var(--accent);
+    border-color:var(--accent);
+    color:#fff;
+  }
+  .section{
+    margin-bottom:26px;
+  }
+  .section-title{
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    color:var(--muted);
+    margin:0 0 12px;
+    padding-bottom:8px;
+    border-bottom:1px solid var(--line);
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+  }
+  .section-title .toggle{
+    text-transform:none;
+    font-weight:600;
+    font-size:12px;
+    color:var(--accent);
+    cursor:pointer;
+    letter-spacing:0;
+  }
+  .row{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+  }
+  label{
+    display:block;
+    font-size:12px;
+    font-weight:600;
+    color:var(--ink);
+    margin:10px 0 4px;
+  }
+  label.first{margin-top:0;}
+  .checkbox-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin:10px 0 4px;
+  }
+  .checkbox-row input[type=checkbox]{width:15px;height:15px;margin:0;}
+  .checkbox-row label{margin:0;font-size:13px;font-weight:600;}
+  input[type=text],input[type=number],input[type=date],select,textarea{
+    width:100%;
+    padding:8px 10px;
+    font-size:13px;
+    font-family:inherit;
+    border:1px solid var(--line);
+    border-radius:6px;
+    background:#fff;
+    color:var(--ink);
+  }
+  input:focus,textarea:focus,select:focus{
+    outline:none;
+    border-color:var(--accent);
+    box-shadow:0 0 0 3px rgba(31,58,95,0.12);
+  }
+  textarea{resize:vertical;min-height:56px;}
+  .logo-row{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    margin-top:8px;
+  }
+  .logo-preview{
+    width:56px;height:56px;
+    border:1px dashed var(--line);
+    border-radius:6px;
+    display:flex;align-items:center;justify-content:center;
+    overflow:hidden;
+    flex-shrink:0;
+    background:#fafaf8;
+  }
+  .logo-preview img{max-width:100%;max-height:100%;object-fit:contain;}
+  .logo-preview span{font-size:10px;color:var(--muted);text-align:center;}
+  .btn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+    font-size:13px;
+    font-weight:600;
+    padding:8px 14px;
+    border-radius:6px;
+    border:1px solid var(--line);
+    background:#fff;
+    color:var(--ink);
+    cursor:pointer;
+  }
+  .btn:hover{background:#f7f6f2;}
+  .btn.small{padding:5px 10px;font-size:12px;}
+  .btn.danger{color:var(--danger);border-color:#efd7d4;}
+  .btn.danger:hover{background:#fbf0ee;}
+  .btn.primary{
+    background:var(--accent);
+    border-color:var(--accent);
+    color:#fff;
+    width:100%;
+    padding:12px;
+    font-size:14px;
+    margin-top:6px;
+  }
+  .btn.primary:hover{background:var(--accent-hover);}
+  .btn.primary:disabled{background:#b9b6ac;border-color:#b9b6ac;cursor:not-allowed;}
+  .item-card{
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:12px;
+    margin-bottom:10px;
+    position:relative;
+  }
+  .item-card .row3{
+    display:grid;
+    grid-template-columns:1fr 1fr 1fr;
+    gap:8px;
+  }
+  .item-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:2px;
+  }
+  .item-top span{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;}
+  .remove-item{
+    background:none;border:none;cursor:pointer;
+    color:var(--muted);font-size:16px;line-height:1;
+    padding:2px 4px;
+  }
+  .remove-item:hover{color:var(--danger);}
+  .status{
+    font-size:12px;
+    margin-top:10px;
+    text-align:center;
+    min-height:16px;
+  }
+  .status.ok{color:#2f6b3e;}
+  .status.warn{color:var(--danger);}
+  .collapsible{display:none;}
+  .collapsible.open{display:block;}
+  .hidden{display:none !important;}
+
+  .preview-wrap{
+    padding:36px;
+    display:flex;
+    justify-content:center;
+    align-items:flex-start;
+  }
+  #doc{
+    width:816px;
+    min-height:1056px;
+    background:var(--paper);
+    padding:64px 60px;
+    box-shadow:0 1px 3px rgba(0,0,0,0.08), 0 1px 12px rgba(0,0,0,0.06);
+    font-size:13px;
+    color:var(--ink);
+    position:relative;
+  }
+  .d-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    margin-bottom:32px;
+  }
+  .d-header h2{
+    font-size:32px;
+    font-weight:700;
+    margin:0;
+    letter-spacing:-0.02em;
+  }
+  .d-logo{max-width:130px;max-height:80px;object-fit:contain;}
+  .meta-line{margin:0 0 4px;font-size:13px;}
+  .meta-line b{display:inline-block;width:130px;font-weight:700;}
+  .addr-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:20px;
+    margin:24px 0 28px;
+  }
+  .addr-grid .h{font-weight:700;margin-bottom:4px;}
+  .addr-grid div p{margin:0 0 2px;line-height:1.5;}
+  .amount-due{font-size:19px;font-weight:700;margin:0 0 6px;}
+  .pay-link{color:#1155cc;font-size:13px;text-decoration:underline;margin:0 0 14px;display:block;}
+  .note{font-size:12.5px;color:#333;line-height:1.6;margin:0;}
+  .pay-address{
+    border-top:1.5px solid var(--ink);
+    margin-top:10px;
+    padding-top:10px;
+    font-size:12.5px;
+    line-height:1.6;
+  }
+  table.items{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:26px;
+  }
+  table.items th{
+    text-align:right;
+    font-size:12px;
+    font-weight:700;
+    border-bottom:1.5px solid var(--ink);
+    padding:0 0 6px;
+  }
+  table.items th:first-child{text-align:left;}
+  table.items td{
+    padding:10px 0;
+    border-bottom:1px solid var(--line);
+    vertical-align:top;
+    font-size:12.5px;
+  }
+  table.items td:not(:first-child){text-align:right;}
+  .desc-sub{color:var(--muted);font-size:12px;margin-top:2px;}
+  .totals{
+    width:260px;
+    margin-left:auto;
+    margin-top:14px;
+  }
+  .totals .t-row{
+    display:flex;
+    justify-content:space-between;
+    padding:6px 0;
+    font-size:12.5px;
+  }
+  .totals .t-row.line{border-top:1px solid var(--line);}
+  .totals .t-row.due{border-top:1px solid var(--line);font-weight:700;font-size:13px;}
+  .credit-line{
+    display:flex;
+    justify-content:space-between;
+    font-size:12.5px;
+    padding:10px 0;
+    border-bottom:1px solid var(--line);
+  }
+  .section-heading{
+    font-size:16px;
+    font-weight:700;
+    margin:30px 0 14px;
+  }
+  table.hist{
+    width:100%;
+    border-collapse:collapse;
+  }
+  table.hist th{
+    text-align:left;
+    font-size:12px;
+    font-weight:700;
+    border-bottom:1.5px solid var(--ink);
+    padding:0 0 6px;
+  }
+  table.hist th:not(:first-child){text-align:right;}
+  table.hist td{
+    padding:8px 0;
+    border-bottom:1px solid var(--line);
+    font-size:12.5px;
+  }
+  table.hist td:not(:first-child){text-align:right;}
+  .foot-note{
+    position:absolute;
+    bottom:40px;
+    left:60px;
+    right:60px;
+    border-top:1px solid var(--line);
+    padding-top:10px;
+    font-size:11px;
+    color:var(--muted);
+    display:flex;
+    justify-content:space-between;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="panel">
+    <h1>Document generator</h1>
+    <p class="sub">Build an invoice or receipt, then export it as a PDF.</p>
+
+    <div class="type-toggle">
+      <button type="button" id="btnInvoice" class="active">Invoice</button>
+      <button type="button" id="btnReceipt">Receipt</button>
+    </div>
+
+    <div class="section">
+      <p class="section-title" id="detailsTitle">Invoice details</p>
+      <label class="first">Invoice number</label>
+      <input type="text" id="invNumber" value="INV-0001">
+
+      <div id="receiptNumberField" class="hidden">
+        <label>Receipt number</label>
+        <input type="text" id="receiptNumber" value="0000-0000-0000">
+      </div>
+
+      <div id="invoiceDateFields">
+        <label>Date of issue</label>
+        <input type="date" id="dateIssue">
+
+        <div class="checkbox-row">
+          <input type="checkbox" id="hasDue" checked>
+          <label for="hasDue">This invoice has an amount due (unpaid)</label>
+        </div>
+        <div id="dueDateField">
+          <label>Date due</label>
+          <input type="date" id="dateDue">
+        </div>
+      </div>
+
+      <div id="receiptDateField" class="hidden">
+        <label class="first">Date paid</label>
+        <input type="date" id="datePaid">
+      </div>
+
+      <label>Currency code</label>
+      <input type="text" id="currency" value="USD" maxlength="6" style="width:110px;">
+
+      <div class="checkbox-row">
+        <input type="checkbox" id="showCurrencyCode" checked>
+        <label for="showCurrencyCode">Show currency code after totals (e.g. "USD")</label>
+      </div>
+    </div>
+
+    <div class="section">
+      <p class="section-title">From</p>
+      <div class="logo-row">
+        <div class="logo-preview" id="logoPreview"><span>Logo</span></div>
+        <div>
+          <input type="file" id="logoInput" accept="image/*" style="display:none;">
+          <button class="btn small" id="logoBtn" type="button">Upload logo</button>
+          <button class="btn small danger" id="logoClear" type="button" style="display:none;">Remove</button>
+        </div>
+      </div>
+      <label>Company name</label>
+      <input type="text" id="fromName" value="The Generic Company">
+      <label>Address line</label>
+      <input type="text" id="fromAddr1" value="123 Example Street">
+      <label>City, state, ZIP / country</label>
+      <input type="text" id="fromAddr2" value="Lahore, Punjab, Pakistan">
+      <label>Email</label>
+      <input type="text" id="fromEmail" value="hello@thegenericcompany.com">
+    </div>
+
+    <div class="section">
+      <p class="section-title">Bill to</p>
+      <label class="first">Client / organization name</label>
+      <input type="text" id="toName" placeholder="Client's organization">
+      <label>Address line</label>
+      <input type="text" id="toAddr1" placeholder="Street address">
+      <label>City, state, ZIP / country</label>
+      <input type="text" id="toAddr2" placeholder="City, country">
+      <label>Email</label>
+      <input type="text" id="toEmail" placeholder="client@email.com">
+    </div>
+
+    <div class="section" id="payLinkSection">
+      <p class="section-title">Payment</p>
+      <label class="first">Pay online link (optional)</label>
+      <input type="text" id="payLink" placeholder="https://example.com/pay">
+    </div>
+
+    <div class="section">
+      <p class="section-title">Payment note</p>
+      <label class="first">Note text</label>
+      <textarea id="payNote">While we prefer electronic payment methods, any checks must be sent to the address below.</textarea>
+      <label>Payment address</label>
+      <textarea id="payAddress">The Generic Company&#10;P.O. Box 0000&#10;Lahore, Punjab, Pakistan</textarea>
+    </div>
+
+    <div class="section">
+      <p class="section-title">Line items</p>
+      <div id="itemsList"></div>
+      <button class="btn small" id="addItem" type="button">+ Add line item</button>
+    </div>
+
+    <div class="section hidden" id="creditsSectionWrap">
+      <p class="section-title">
+        Credits / refunds
+        <span class="toggle" id="toggleCredits">+ Add</span>
+      </p>
+      <div class="collapsible" id="creditsBlock">
+        <div id="creditsList"></div>
+        <button class="btn small" id="addCredit" type="button">+ Add credit line</button>
+      </div>
+    </div>
+
+    <div class="section hidden" id="historySectionWrap">
+      <p class="section-title">Payment history</p>
+      <div id="historyList"></div>
+      <button class="btn small" id="addHistory" type="button">+ Add payment record</button>
+    </div>
+
+    <button class="btn primary" id="exportBtn" type="button">Export as PDF</button>
+    <p class="status" id="status"></p>
+  </div>
+
+  <div class="preview-wrap">
+    <div id="doc"></div>
+  </div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script>
+let docType = "invoice";
+let items = [
+  { desc: "Service or product name", sub: "", qty: 1, price: 0 }
+];
+let credits = [];
+let history = [];
+let logoDataUrl = null;
+let creditsOpen = false;
+
+function fmtDate(iso){
+  if(!iso) return "[Select a date]";
+  const [y,m,d] = iso.split("-");
+  return `${d}/${m}/${y}`;
+}
+
+const CURRENCY_SYMBOLS = {
+  USD:"$", CAD:"$", AUD:"$", NZD:"$", SGD:"$", HKD:"$",
+  EUR:"€", GBP:"£", JPY:"¥", CNY:"¥",
+  INR:"₹", PKR:"Rs ", AED:"", SAR:"", KWD:"", QAR:"",
+};
+function currencySymbol(code){
+  const key = (code||"").toUpperCase();
+  return CURRENCY_SYMBOLS.hasOwnProperty(key) ? CURRENCY_SYMBOLS[key] : "";
+}
+function getCurrency(){
+  return document.getElementById("currency").value.trim() || "USD";
+}
+function showCurrencyCode(){
+  return document.getElementById("showCurrencyCode").checked;
+}
+function fmtMoney(n, code, showCode){
+  code = code || "";
+  const v = isFinite(n) ? n : 0;
+  const sign = v < 0 ? "-" : "";
+  const abs = Math.abs(v);
+  const symbol = currencySymbol(code);
+  const numberStr = abs.toLocaleString("en-US", { minimumFractionDigits:2, maximumFractionDigits:2 });
+  let out = sign + symbol + numberStr;
+  if(showCode && code) out += " " + code;
+  return out;
+}
+
+function escapeAttr(s){ return (s||"").replace(/"/g,"&quot;"); }
+function escapeHtml(s){
+  const d = document.createElement("div");
+  d.textContent = s || "";
+  return d.innerHTML;
+}
+
+function switchType(type){
+  docType = type;
+  document.getElementById("btnInvoice").classList.toggle("active", type==="invoice");
+  document.getElementById("btnReceipt").classList.toggle("active", type==="receipt");
+  document.getElementById("detailsTitle").textContent = type==="invoice" ? "Invoice details" : "Receipt details";
+  document.getElementById("receiptNumberField").classList.toggle("hidden", type!=="receipt");
+  document.getElementById("invoiceDateFields").classList.toggle("hidden", type!=="invoice");
+  document.getElementById("receiptDateField").classList.toggle("hidden", type!=="receipt");
+  document.getElementById("payLinkSection").classList.toggle("hidden", type!=="invoice");
+  document.getElementById("creditsSectionWrap").classList.toggle("hidden", type!=="receipt");
+  document.getElementById("historySectionWrap").classList.toggle("hidden", type!=="receipt");
+  renderPreview();
+  checkComplete();
+}
+document.getElementById("btnInvoice").addEventListener("click", ()=>switchType("invoice"));
+document.getElementById("btnReceipt").addEventListener("click", ()=>switchType("receipt"));
+
+document.getElementById("hasDue").addEventListener("change", (e)=>{
+  document.getElementById("dueDateField").classList.toggle("hidden", !e.target.checked);
+  renderPreview();
+  checkComplete();
+});
+
+function renderItemsForm(){
+  const list = document.getElementById("itemsList");
+  list.innerHTML = "";
+  items.forEach((item, idx) => {
+    const card = document.createElement("div");
+    card.className = "item-card";
+    card.innerHTML = `
+      <div class="item-top">
+        <span>Item ${idx+1}</span>
+        <button class="remove-item" type="button" data-idx="${idx}" aria-label="Remove item">×</button>
+      </div>
+      <label class="first">Description</label>
+      <input type="text" class="it-desc" data-idx="${idx}" value="${escapeAttr(item.desc)}">
+      <label>Details / date range (optional)</label>
+      <input type="text" class="it-sub" data-idx="${idx}" value="${escapeAttr(item.sub)}">
+      <div class="row3" style="margin-top:8px;">
+        <div>
+          <label style="margin-top:0;">Qty</label>
+          <input type="number" class="it-qty" data-idx="${idx}" value="${item.qty}" min="0" step="1">
+        </div>
+        <div>
+          <label style="margin-top:0;">Unit price</label>
+          <input type="number" class="it-price" data-idx="${idx}" value="${item.price}" min="0" step="0.01">
+        </div>
+        <div>
+          <label style="margin-top:0;">Amount</label>
+          <input type="text" disabled value="${fmtMoney(item.qty*item.price, getCurrency())}">
+        </div>
+      </div>
+    `;
+    list.appendChild(card);
+  });
+
+  list.querySelectorAll(".remove-item").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      const idx = +btn.dataset.idx;
+      items.splice(idx,1);
+      if(items.length===0) items.push({desc:"",sub:"",qty:1,price:0});
+      renderItemsForm(); renderPreview(); checkComplete();
+    });
+  });
+  list.querySelectorAll(".it-desc").forEach(el=>el.addEventListener("input", e=>{
+    items[+e.target.dataset.idx].desc = e.target.value; renderPreview(); checkComplete();
+  }));
+  list.querySelectorAll(".it-sub").forEach(el=>el.addEventListener("input", e=>{
+    items[+e.target.dataset.idx].sub = e.target.value; renderPreview();
+  }));
+  list.querySelectorAll(".it-qty").forEach(el=>el.addEventListener("input", e=>{
+    items[+e.target.dataset.idx].qty = parseFloat(e.target.value)||0; renderItemsForm(); renderPreview(); checkComplete();
+  }));
+  list.querySelectorAll(".it-price").forEach(el=>el.addEventListener("input", e=>{
+    items[+e.target.dataset.idx].price = parseFloat(e.target.value)||0; renderItemsForm(); renderPreview(); checkComplete();
+  }));
+}
+
+function renderCreditsForm(){
+  const list = document.getElementById("creditsList");
+  list.innerHTML = "";
+  credits.forEach((c, idx)=>{
+    const card = document.createElement("div");
+    card.className = "item-card";
+    card.innerHTML = `
+      <div class="item-top">
+        <span>Credit ${idx+1}</span>
+        <button class="remove-credit" type="button" data-idx="${idx}" aria-label="Remove credit">×</button>
+      </div>
+      <label class="first">Description</label>
+      <input type="text" class="cr-desc" data-idx="${idx}" value="${escapeAttr(c.desc)}" placeholder="e.g. (REF-01) 1 × Max plan (at $100.00/month)">
+      <label>Amount (credited)</label>
+      <input type="number" class="cr-amount" data-idx="${idx}" value="${c.amount}" step="0.01">
+    `;
+    list.appendChild(card);
+  });
+  list.querySelectorAll(".remove-credit").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      credits.splice(+btn.dataset.idx,1);
+      renderCreditsForm(); renderPreview();
+    });
+  });
+  list.querySelectorAll(".cr-desc").forEach(el=>el.addEventListener("input", e=>{
+    credits[+e.target.dataset.idx].desc = e.target.value; renderPreview();
+  }));
+  list.querySelectorAll(".cr-amount").forEach(el=>el.addEventListener("input", e=>{
+    credits[+e.target.dataset.idx].amount = parseFloat(e.target.value)||0; renderPreview();
+  }));
+}
+
+function renderHistoryForm(){
+  const list = document.getElementById("historyList");
+  list.innerHTML = "";
+  history.forEach((h, idx)=>{
+    const card = document.createElement("div");
+    card.className = "item-card";
+    card.innerHTML = `
+      <div class="item-top">
+        <span>Payment ${idx+1}</span>
+        <button class="remove-hist" type="button" data-idx="${idx}" aria-label="Remove payment record">×</button>
+      </div>
+      <label class="first">Payment method</label>
+      <input type="text" class="h-method" data-idx="${idx}" value="${escapeAttr(h.method)}" placeholder="e.g. Visa - 3671">
+      <div class="row" style="margin-top:8px;">
+        <div>
+          <label style="margin-top:0;">Date</label>
+          <input type="date" class="h-date" data-idx="${idx}" value="${h.date}">
+        </div>
+        <div>
+          <label style="margin-top:0;">Amount paid</label>
+          <input type="number" class="h-amount" data-idx="${idx}" value="${h.amount}" step="0.01">
+        </div>
+      </div>
+      <label>Receipt number</label>
+      <input type="text" class="h-receipt" data-idx="${idx}" value="${escapeAttr(h.receipt)}">
+    `;
+    list.appendChild(card);
+  });
+  list.querySelectorAll(".remove-hist").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      history.splice(+btn.dataset.idx,1);
+      renderHistoryForm(); renderPreview();
+    });
+  });
+  list.querySelectorAll(".h-method").forEach(el=>el.addEventListener("input", e=>{
+    history[+e.target.dataset.idx].method = e.target.value; renderPreview();
+  }));
+  list.querySelectorAll(".h-date").forEach(el=>el.addEventListener("input", e=>{
+    history[+e.target.dataset.idx].date = e.target.value; renderPreview();
+  }));
+  list.querySelectorAll(".h-amount").forEach(el=>el.addEventListener("input", e=>{
+    history[+e.target.dataset.idx].amount = parseFloat(e.target.value)||0; renderPreview();
+  }));
+  list.querySelectorAll(".h-receipt").forEach(el=>el.addEventListener("input", e=>{
+    history[+e.target.dataset.idx].receipt = e.target.value; renderPreview();
+  }));
+}
+
+function itemsTableHTML(){
+  const currency = getCurrency();
+  let rows = "";
+  items.forEach(it=>{
+    rows += `<tr>
+      <td>${escapeHtml(it.desc) || "&nbsp;"}${it.sub ? `<div class="desc-sub">${escapeHtml(it.sub)}</div>` : ""}</td>
+      <td>${it.qty}</td>
+      <td>${fmtMoney(it.price, currency)}</td>
+      <td>${fmtMoney(it.qty*it.price, currency)}</td>
+    </tr>`;
+  });
+  return `<table class="items">
+    <thead><tr><th>Description</th><th>Qty</th><th>Unit price</th><th>Amount</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+}
+
+function addressBlockHTML(){
+  const fromName = document.getElementById("fromName").value;
+  const fromAddr1 = document.getElementById("fromAddr1").value;
+  const fromAddr2 = document.getElementById("fromAddr2").value;
+  const fromEmail = document.getElementById("fromEmail").value;
+  const toName = document.getElementById("toName").value || "[Client name]";
+  const toAddr1 = document.getElementById("toAddr1").value;
+  const toAddr2 = document.getElementById("toAddr2").value;
+  const toEmail = document.getElementById("toEmail").value;
+  return `<div class="addr-grid">
+    <div>
+      <p class="h">${escapeHtml(fromName)}</p>
+      <p>${escapeHtml(fromAddr1)}</p>
+      <p>${escapeHtml(fromAddr2)}</p>
+      <p>${escapeHtml(fromEmail)}</p>
+    </div>
+    <div>
+      <p class="h">Bill to</p>
+      <p>${escapeHtml(toName)}</p>
+      <p>${escapeHtml(toAddr1)}</p>
+      <p>${escapeHtml(toAddr2)}</p>
+      <p>${escapeHtml(toEmail)}</p>
+    </div>
+  </div>`;
+}
+
+function noteBlockHTML(){
+  const note = document.getElementById("payNote").value;
+  const addr = document.getElementById("payAddress").value;
+  return `<p class="note">${escapeHtml(note)}</p>
+    <div class="pay-address">${escapeHtml(addr).replace(/\n/g,"<br>")}</div>`;
+}
+
+function logoHTML(){
+  if(!logoDataUrl) return "";
+  return `<img class="d-logo" src="${logoDataUrl}">`;
+}
+
+function renderInvoicePreview(){
+  const currency = document.getElementById("currency").value.trim() || "USD";
+  const invNumber = document.getElementById("invNumber").value || "[Invoice number]";
+  const dateIssue = fmtDate(document.getElementById("dateIssue").value);
+  const hasDue = document.getElementById("hasDue").checked;
+  const dateDue = fmtDate(document.getElementById("dateDue").value);
+  const subtotal = items.reduce((s,it)=> s + (it.qty*it.price), 0);
+  const total = subtotal;
+  const payLink = document.getElementById("payLink").value.trim();
+  const fromName = document.getElementById("fromName").value;
+
+  const metaLines = `
+    <p class="meta-line"><b>Invoice number</b><span>${escapeHtml(invNumber)}</span></p>
+    <p class="meta-line"><b>Date of issue</b><span>${dateIssue}</span></p>
+    ${hasDue ? `<p class="meta-line"><b>Date due</b><span>${dateDue}</span></p>` : ""}
+  `;
+
+  const headline = hasDue
+    ? `<p class="amount-due">${fmtMoney(total, currency, showCurrencyCode())} due ${dateDue}</p>`
+    : `<p class="amount-due">${fmtMoney(total, currency, showCurrencyCode())}</p>`;
+
+  const payLinkHTML = payLink ? `<a class="pay-link" href="${escapeAttr(payLink)}">Pay online</a>` : "";
+
+  document.getElementById("doc").innerHTML = `
+    <div class="d-header"><h2>Invoice</h2>${logoHTML()}</div>
+    ${metaLines}
+    ${addressBlockHTML()}
+    ${headline}
+    ${payLinkHTML}
+    ${noteBlockHTML()}
+    ${itemsTableHTML()}
+    <div class="totals">
+      <div class="t-row"><span>Subtotal</span><span>${fmtMoney(subtotal, currency, showCurrencyCode())}</span></div>
+      <div class="t-row line"><span>Total</span><span>${fmtMoney(total, currency, showCurrencyCode())}</span></div>
+      <div class="t-row due"><span>Amount due</span><span>${fmtMoney(total, currency, showCurrencyCode())}</span></div>
+    </div>
+    <div class="foot-note"><span>${escapeHtml(fromName)}</span><span>Page 1 of 1</span></div>
+  `;
+}
+
+function renderReceiptPreview(){
+  const currency = document.getElementById("currency").value.trim() || "USD";
+  const invNumber = document.getElementById("invNumber").value || "[Invoice number]";
+  const receiptNumber = document.getElementById("receiptNumber").value || "[Receipt number]";
+  const datePaid = fmtDate(document.getElementById("datePaid").value);
+  const subtotal = items.reduce((s,it)=> s + (it.qty*it.price), 0);
+  const total = subtotal;
+  const fromName = document.getElementById("fromName").value;
+
+  let creditsHTML = "";
+  if(credits.length > 0){
+    let creditTotal = 0;
+    let lines = "";
+    credits.forEach(c=>{
+      const amt = -Math.abs(c.amount||0);
+      creditTotal += amt;
+      lines += `<div class="credit-line"><span>${escapeHtml(c.desc)}</span><span>${fmtMoney(amt, currency)}</span></div>`;
+    });
+    creditsHTML = `
+      ${lines}
+      <div class="totals">
+        <div class="t-row"><span>Credited subtotal</span><span>${fmtMoney(creditTotal, currency, showCurrencyCode())}</span></div>
+        <div class="t-row line"><span>Credited total</span><span>${fmtMoney(creditTotal, currency, showCurrencyCode())}</span></div>
+        <div class="t-row due"><span>Adjusted invoice total</span><span>${fmtMoney(total + creditTotal, currency, showCurrencyCode())}</span></div>
+      </div>
+    `;
+  }
+
+  let historyHTML = "";
+  if(history.length > 0){
+    let rows = "";
+    history.forEach(h=>{
+      rows += `<tr>
+        <td>${escapeHtml(h.method)}</td>
+        <td>${fmtDate(h.date)}</td>
+        <td>${fmtMoney(h.amount, currency)}</td>
+        <td>${escapeHtml(h.receipt)}</td>
+      </tr>`;
+    });
+    historyHTML = `
+      <p class="section-heading">Payment history</p>
+      <table class="hist">
+        <thead><tr><th>Payment method</th><th>Date</th><th>Amount paid</th><th>Receipt number</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    `;
+  }
+
+  document.getElementById("doc").innerHTML = `
+    <div class="d-header"><h2>Receipt</h2>${logoHTML()}</div>
+    <p class="meta-line"><b>Invoice number</b><span>${escapeHtml(invNumber)}</span></p>
+    <p class="meta-line"><b>Receipt number</b><span>${escapeHtml(receiptNumber)}</span></p>
+    <p class="meta-line"><b>Date paid</b><span>${datePaid}</span></p>
+    ${addressBlockHTML()}
+    <p class="amount-due">${fmtMoney(total, currency, showCurrencyCode())} paid on ${datePaid}</p>
+    ${noteBlockHTML()}
+    ${itemsTableHTML()}
+    <div class="totals">
+      <div class="t-row"><span>Subtotal</span><span>${fmtMoney(subtotal, currency, showCurrencyCode())}</span></div>
+      <div class="t-row line"><span>Total</span><span>${fmtMoney(total, currency, showCurrencyCode())}</span></div>
+      <div class="t-row due"><span>Amount paid</span><span>${fmtMoney(total, currency, showCurrencyCode())}</span></div>
+    </div>
+    ${creditsHTML}
+    ${historyHTML}
+    <div class="foot-note"><span>${escapeHtml(fromName)}</span><span>Page 1 of 1</span></div>
+  `;
+}
+
+function renderPreview(){
+  if(docType === "invoice") renderInvoicePreview();
+  else renderReceiptPreview();
+}
+
+function setStatus(msg, cls){
+  const el = document.getElementById("status");
+  el.textContent = msg;
+  el.className = "status " + (cls||"");
+}
+
+function checkComplete(){
+  let required;
+  if(docType === "invoice"){
+    required = [
+      document.getElementById("invNumber").value.trim(),
+      document.getElementById("dateIssue").value,
+      document.getElementById("fromName").value.trim(),
+      document.getElementById("toName").value.trim(),
+    ];
+    if(document.getElementById("hasDue").checked){
+      required.push(document.getElementById("dateDue").value);
+    }
+  } else {
+    required = [
+      document.getElementById("invNumber").value.trim(),
+      document.getElementById("receiptNumber").value.trim(),
+      document.getElementById("datePaid").value,
+      document.getElementById("fromName").value.trim(),
+      document.getElementById("toName").value.trim(),
+    ];
+  }
+  const itemsOk = items.length>0 && items.every(it=> it.desc.trim() && it.qty>0 && it.price>=0);
+  const ok = required.every(Boolean) && itemsOk;
+  document.getElementById("exportBtn").disabled = !ok;
+  setStatus(ok ? "" : "Fill in the required fields and complete line items to export.", ok ? "" : "warn");
+  return ok;
+}
+
+["invNumber","receiptNumber","dateIssue","dateDue","datePaid","currency","fromName","fromAddr1","fromAddr2","fromEmail",
+ "toName","toAddr1","toAddr2","toEmail","payLink","payNote","payAddress"].forEach(id=>{
+  document.getElementById(id).addEventListener("input", ()=>{ renderPreview(); checkComplete(); });
+});
+
+document.getElementById("showCurrencyCode").addEventListener("change", ()=>{ renderPreview(); });
+
+document.getElementById("addItem").addEventListener("click", ()=>{
+  items.push({desc:"",sub:"",qty:1,price:0});
+  renderItemsForm(); renderPreview(); checkComplete();
+});
+
+document.getElementById("toggleCredits").addEventListener("click", ()=>{
+  creditsOpen = !creditsOpen;
+  document.getElementById("creditsBlock").classList.toggle("open", creditsOpen);
+  document.getElementById("toggleCredits").textContent = creditsOpen ? "− Hide" : "+ Add";
+  if(creditsOpen && credits.length===0){
+    credits.push({desc:"", amount:0});
+    renderCreditsForm();
+  }
+});
+document.getElementById("addCredit").addEventListener("click", ()=>{
+  credits.push({desc:"", amount:0});
+  renderCreditsForm(); renderPreview();
+});
+
+document.getElementById("addHistory").addEventListener("click", ()=>{
+  history.push({method:"", date:"", amount:0, receipt:""});
+  renderHistoryForm(); renderPreview();
+});
+
+document.getElementById("logoBtn").addEventListener("click", ()=> document.getElementById("logoInput").click());
+document.getElementById("logoInput").addEventListener("change", (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    logoDataUrl = reader.result;
+    document.getElementById("logoPreview").innerHTML = `<img src="${logoDataUrl}">`;
+    document.getElementById("logoClear").style.display = "inline-flex";
+    renderPreview();
+  };
+  reader.readAsDataURL(file);
+});
+document.getElementById("logoClear").addEventListener("click", ()=>{
+  logoDataUrl = null;
+  document.getElementById("logoPreview").innerHTML = "<span>Logo</span>";
+  document.getElementById("logoClear").style.display = "none";
+  renderPreview();
+});
+
+document.getElementById("exportBtn").addEventListener("click", async ()=>{
+  if(!checkComplete()) return;
+  const btn = document.getElementById("exportBtn");
+  btn.disabled = true;
+  setStatus("Generating PDF…", "");
+  try{
+    const node = document.getElementById("doc");
+    const canvas = await html2canvas(node, { scale: 2, useCORS: true, backgroundColor: "#ffffff" });
+    const imgData = canvas.toDataURL("image/png");
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ unit: "pt", format: "letter" });
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const imgW = pageWidth;
+    const imgH = (canvas.height * imgW) / canvas.width;
+
+    if(imgH <= pageHeight){
+      pdf.addImage(imgData, "PNG", 0, 0, imgW, imgH);
+    } else {
+      let remaining = canvas.height;
+      let position = 0;
+      const pageCanvasHeightPx = Math.floor((pageHeight * canvas.width) / imgW);
+      while(remaining > 0){
+        const sliceHeight = Math.min(pageCanvasHeightPx, remaining);
+        const sliceCanvas = document.createElement("canvas");
+        sliceCanvas.width = canvas.width;
+        sliceCanvas.height = sliceHeight;
+        const ctx = sliceCanvas.getContext("2d");
+        ctx.drawImage(canvas, 0, position, canvas.width, sliceHeight, 0, 0, canvas.width, sliceHeight);
+        const sliceData = sliceCanvas.toDataURL("image/png");
+        const sliceHeightPt = (sliceHeight * imgW) / canvas.width;
+        if(position > 0) pdf.addPage();
+        pdf.addImage(sliceData, "PNG", 0, 0, imgW, sliceHeightPt);
+        position += sliceHeight;
+        remaining -= sliceHeight;
+      }
+    }
+    const num = (docType === "invoice"
+      ? document.getElementById("invNumber").value.trim()
+      : document.getElementById("receiptNumber").value.trim()) || docType;
+    const prefix = docType === "invoice" ? "Invoice" : "Receipt";
+    pdf.save(`${prefix}-${num}.pdf`);
+    setStatus("PDF downloaded.", "ok");
+  }catch(err){
+    console.error(err);
+    setStatus("Something went wrong generating the PDF.", "warn");
+  }finally{
+    btn.disabled = false;
+  }
+});
+
+const today = new Date();
+const todayIso = today.toISOString().slice(0,10);
+document.getElementById("dateIssue").value = todayIso;
+document.getElementById("datePaid").value = todayIso;
+const due = new Date(today); due.setDate(due.getDate()+14);
+document.getElementById("dateDue").value = due.toISOString().slice(0,10);
+
+renderItemsForm();
+renderCreditsForm();
+renderHistoryForm();
+switchType("invoice");
+</script>
+</body>
+</html>
